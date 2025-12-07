@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>VAYU SAVVY</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0284c7">
+
+<style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #0f172a;
+  color: #ffffff;
+  text-align: center;
+}
+
+header {
+  background: #0284c7;
+  padding: 16px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+header h2 {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.container {
+  padding: 10px;
+}
+
+.card {
+  background: #1e293b;
+  margin: 10px;
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.card-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+  opacity: 0.85;
+}
+
+.value {
+  font-size: 34px;
+  font-weight: bold;
+}
+
+.unit {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.on {
+  color: #22c55e;
+}
+
+.off {
+  color: #ef4444;
+}
+
+.footer {
+  font-size: 12px;
+  opacity: 0.6;
+  margin: 10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>VAYU SAVVY</h1>
+  <h2>SAIGANESH</h2>
+</header>
+
+<div class="container">
+
+  <!-- PM Values -->
+  <div class="card">
+    <div class="card-title">PM1.0</div>
+    <div id="pm1" class="value">--</div>
+    <div class="unit">µg/m³</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">PM2.5</div>
+    <div id="pm25" class="value">--</div>
+    <div class="unit">µg/m³</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">PM10</div>
+    <div id="pm10" class="value">--</div>
+    <div class="unit">µg/m³</div>
+  </div>
+
+  <!-- Device Status -->
+  <div class="card">
+    <div class="card-title">Buzzer</div>
+    <div id="buzzer" class="value">--</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Exhaust Fan</div>
+    <div id="fan" class="value">--</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Humidifier</div>
+    <div id="humidifier" class="value">--</div>
+  </div>
+
+</div>
+
+<div class="footer">
+  ESP32 · PM5003 · ThingSpeak
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const CHANNEL_ID = "YOUR_CHANNEL_ID";
+const READ_API_KEY = "YOUR_READ_API_KEY";
+
+/* ================= HELPERS ================= */
+function setStatus(el, value) {
+  if (value == 1) {
+    el.textContent = "ON";
+    el.className = "value on";
+  } else {
+    el.textContent = "OFF";
+    el.className = "value off";
+  }
+}
+
+/* ================= FETCH ================= */
+function updateData() {
+  fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_API_KEY}&results=1`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.feeds.length) return;
+
+      const f = data.feeds[0];
+
+      document.getElementById("pm1").textContent = f.field1 || "--";
+      document.getElementById("pm25").textContent = f.field2 || "--";
+      document.getElementById("pm10").textContent = f.field3 || "--";
+
+      setStatus(document.getElementById("buzzer"), f.field4);
+      setStatus(document.getElementById("fan"), f.field5);
+      setStatus(document.getElementById("humidifier"), f.field6);
+    })
+    .catch(() => {
+      console.log("ThingSpeak fetch error");
+    });
+}
+
+/* ================= AUTO REFRESH ================= */
+updateData();
+setInterval(updateData, 15000);   // ThingSpeak safe interval
+</script>
+
+</body>
+</html>
